@@ -1,0 +1,19 @@
+repos:
+  - hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - args:
+          - --allow-missing-credentials
+        id: detect-aws-credentials
+    repo: git@github.com:pre-commit/pre-commit-hooks.git
+    rev: v3.4.0
+  - hooks:
+      - additional_dependencies: []
+        id: shellcheck
+    repo: git@github.com:jumanjihouse/pre-commit-hooks.git
+    rev: 2.1.5
