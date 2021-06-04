@@ -1,0 +1,9 @@
+Host *
+    AddKeysToAgent yes
+    ForwardAgent yes
+    HashKnownHosts no
+    IdentityFile $home_dir/.ssh/id_ed25519
+    IdentityFile $home_dir/.ssh/id_ecdsa
+    IdentityFile $home_dir/.ssh/id_rsa
+    StrictHostKeyChecking no
+    User $current_user
