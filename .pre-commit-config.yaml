@@ -11,7 +11,16 @@ repos:
           - --allow-missing-credentials
         id: detect-aws-credentials
     repo: git@github.com:pre-commit/pre-commit-hooks.git
-    rev: v3.4.0
+    rev: v4.0.1
+  - hooks:
+      - args: ["--profile", "black", "--filter-files"]
+        id: isort
+    repo: git@github.com:pycqa/isort.git
+    rev: 5.8.0
+  - hooks:
+      - id: black
+    repo: git@github.com:psf/black.git
+    rev: 21.5b2
   - hooks:
       - additional_dependencies: []
         id: shellcheck
