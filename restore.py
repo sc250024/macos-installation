@@ -21,7 +21,6 @@ DROPBOX_DIR: typing.Final = os.path.join(
 TEMPLATES_DIR: typing.Final = os.path.join(CURRENT_DIR, "templates")
 
 SYMLINK_FILES: typing.Final = {
-    os.path.join(DROPBOX_DIR, ".gitconfig"): os.path.join(HOME_DIR, ".gitconfig"),
     os.path.join(DROPBOX_DIR, ".gitignore_global"): os.path.join(
         HOME_DIR, ".gitignore_global"
     ),
@@ -65,6 +64,27 @@ def render_template(src: typing.Union[pathlib.PosixPath, str], sub: typing.Dict)
     return template.substitute(sub)
 
 
+def configure_git() -> None:
+    """
+    Configures Git for the new system.
+    """
+    sub = {"home_dir": HOME_DIR}
+    gitconfig_filepath = os.path.join(HOME_DIR, ".gitconfig")
+
+    # Render the contents of the 'gitconfig' file
+    contents = render_template(src=os.path.join(TEMPLATES_DIR, ".gitconfig"), sub=sub)
+
+    # Delete current config if it exists
+    pathlib.Path(gitconfig_filepath).unlink(missing_ok=True)
+
+    # Write the config
+    with open(gitconfig_filepath, "w") as f:
+        f.write(contents)
+
+    # Set permissions on '.ssh' folder and 'config' file
+    os.chmod(gitconfig_filepath, 0o644)
+
+
 def configure_ssh() -> None:
     """
     Configures SSH for the new system.
@@ -102,6 +122,9 @@ def configure_ssh() -> None:
 def main() -> None:
     # Create home directory symlinks
     create_symlinks()
+
+    # Git config
+    configure_git()
 
     # SSH config
     configure_ssh()

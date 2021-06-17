@@ -1,0 +1,52 @@
+######################
+# BASE CONFIGURATION #
+######################
+
+[alias]
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	mff = "!mff() { git merge --ff-only \"$$1\" && git reset --hard HEAD@{1} && git merge --no-ff \"$$1\"; }; mff"
+[color]
+	ui = true
+[color "diff"]
+	commit = yellow bold
+	frag = magenta bold
+	meta = yellow
+	new = green bold
+	old = red bold
+	whitespace = red reverse
+[color "diff-highlight"]
+	newHighlight = green bold 22
+	newNormal = green bold
+	oldHighlight = red bold 52
+	oldNormal = red bold
+[commit]
+	gpgsign = true
+[core]
+	autocrlf = input
+	editor = code --wait
+	excludesfile = $home_dir/.gitignore_global
+	pager = diff-so-fancy | less --tabs=4 -RFX
+[diff]
+	mnemonicPrefix = true
+	renames = true
+[diff "sopsdiffer"]
+	textconv = sops -d
+[gpg]
+	program = /usr/local/bin/gpg
+[init]
+	templateDir = $home_dir/.git-template
+	defaultBranch = main
+[status]
+	showUntrackedFiles = all
+[url "git@github.com:"]
+	insteadOf = https://github.com/
+[url "git@gitlab.com:"]
+	insteadOf = https://gitlab.com/
+[user]
+	email = scott.crooks@gmail.com
+	name = Scott Crooks
+	signingKey = 2B65864AFB33F1C5AD3B68371013BA3530FFE8DA
+
+##################################
+# OVERRIDE / EXTRA CONFIGURATION #
+##################################
