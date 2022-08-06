@@ -13,7 +13,10 @@ repos:
     repo: git@github.com:pre-commit/pre-commit-hooks.git
     rev: v4.3.0
   - hooks:
-      - args: ["--profile", "black", "--filter-files"]
+      - args:
+          - --profile
+          - black
+          - --filter-files
         id: isort
     repo: git@github.com:pycqa/isort.git
     rev: 5.10.1
