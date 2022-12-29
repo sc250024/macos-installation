@@ -1,0 +1,14 @@
+name: macos-installation
+services:
+  macos-install:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - sleep
+      - "3600"
+    image: docker.io/sc250024/macos-installation:latest
+    volumes:
+    - type: bind
+      source: .
+      target: /build
