@@ -19,7 +19,7 @@ repos:
           - --filter-files
         id: isort
     repo: git@github.com:pycqa/isort.git
-    rev: 5.11.2
+    rev: 5.11.4
   - hooks:
       - id: black
     repo: git@github.com:psf/black.git
@@ -29,3 +29,7 @@ repos:
         id: shellcheck
     repo: git@github.com:jumanjihouse/pre-commit-hooks.git
     rev: 3.0.0
+  - hooks:
+      - id: poetry-check
+    repo: git@github.com:python-poetry/poetry.git
+    rev: 1.3.0
