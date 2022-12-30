@@ -65,11 +65,11 @@ def cli(ctx, **kwargs) -> None:
     **config.BASE_CLI_OPTIONS,
 )
 @click.pass_context
-def backup(ctx, **kwargs) -> t.NoReturn:
+def backup(ctx, **kwargs) -> t.Any:
     """
     Backup current macOS installation.
     """
-    params = ctx.obj | kwargs
+    params = {**ctx.obj, **kwargs}
     BackupCommand(**params).main()
 
 
@@ -88,11 +88,11 @@ def backup(ctx, **kwargs) -> t.NoReturn:
     **config.BASE_CLI_OPTIONS,
 )
 @click.pass_context
-def print_backup_locations(ctx, **kwargs) -> t.NoReturn:
+def print_backup_locations(ctx, **kwargs) -> t.Any:
     """
     Print base backup locations.
     """
-    params = ctx.obj | kwargs
+    params = {**ctx.obj, **kwargs}
     click.secho(
         f"==> Printing backup files / folders for user '{config.CURRENT_USER}'",
         fg="green",
@@ -115,9 +115,9 @@ def print_backup_locations(ctx, **kwargs) -> t.NoReturn:
     **config.BASE_CLI_OPTIONS,
 )
 @click.pass_context
-def restore(ctx, **kwargs) -> t.NoReturn:
+def restore(ctx, **kwargs) -> t.Any:
     """
     Restore a previous macOS installation backup.
     """
-    params = ctx.obj | kwargs
+    params = {**ctx.obj, **kwargs}
     RestoreCommand(**params).main()
