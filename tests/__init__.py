@@ -10,6 +10,12 @@ class TestBase(unittest.TestCase):
     maxDiff = None
 
     @staticmethod
+    def generate_random_string(length: int = 100) -> str:
+        return "".join(
+            random.choice(string.ascii_uppercase + string.digits) for _ in range(length)
+        )
+
+    @staticmethod
     def create_temp_file_with_content(
         path: pathlib.Path,
     ) -> t.Tuple[tempfile.NamedTemporaryFile, pathlib.Path, str]:
@@ -17,9 +23,7 @@ class TestBase(unittest.TestCase):
         temp_file = tempfile.NamedTemporaryFile("w+t", dir=path, delete=False)
         temp_file_path = pathlib.Path(temp_file.name)
 
-        temp_file_content = "".join(
-            random.choice(string.ascii_uppercase + string.digits) for _ in range(100)
-        )
+        temp_file_content = TestBase.generate_random_string()
         temp_file.write(temp_file_content)
         temp_file.seek(0)
 
