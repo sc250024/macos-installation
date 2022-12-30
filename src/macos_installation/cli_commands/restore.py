@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import pathlib
@@ -10,13 +11,14 @@ import zipfile
 import click
 
 from macos_installation import config
-from macos_installation.functions import template, util
+from macos_installation.functions import encryption, template, util
 
 
 class RestoreCommand(object):
     def __init__(self, **kwargs):
         self.debug: bool = kwargs["debug"]
         self.dry_run: bool = kwargs["dry_run"]
+        self.password: t.Optional[str] = kwargs["password"]
         self.restore_file: pathlib.Path = kwargs["restore_file"]
 
         # Evaluated later
@@ -34,7 +36,7 @@ class RestoreCommand(object):
     @property
     def info_dict(self) -> t.Dict[str, t.Any]:
         if self._info_dict is None:
-            with zipfile.ZipFile(file=self.restore_file, mode="r") as restore_zip:
+            with self.__get_zip_contents() as restore_zip:
                 # First perform a CRC test before continuing
                 if crc_test := restore_zip.testzip() is not None:
                     click.secho(
@@ -50,7 +52,9 @@ class RestoreCommand(object):
                 )
 
                 # Get the info dict
-                self._info_dict = json.loads(restore_zip.read("info.json").decode())
+                self._info_dict = json.loads(
+                    restore_zip.read("info.json").decode(config.DEFAULT_ENCODING)
+                )
 
         return self._info_dict
 
@@ -68,6 +72,38 @@ class RestoreCommand(object):
             self._temp_dir = tempfile.TemporaryDirectory()
 
         return self._temp_dir
+
+    def __get_zip_contents(self) -> zipfile.ZipFile:
+        try:
+            restore_zip = zipfile.ZipFile(
+                file=self.restore_file, mode="r", compression=zipfile.ZIP_DEFLATED
+            )
+        except zipfile.BadZipfile:
+            # File is encrypted; first check for password
+            if not self.password:
+                click.secho(
+                    "A password must be specified for an encrypted ZIP file!", fg="red"
+                )
+                sys.exit(1)
+
+            # Decrypt the bytes
+            encrypted_bytes = self.restore_file.read_bytes()
+            decrypted_data = encryption.decrypt_bytes(encrypted_bytes, self.password)
+
+            try:
+                restore_zip = zipfile.ZipFile(
+                    file=io.BytesIO(decrypted_data),
+                    mode="r",
+                    compression=zipfile.ZIP_DEFLATED,
+                )
+            except zipfile.BadZipFile:
+                click.secho(
+                    f"Password for encrypted ZIP file '{self.restore_file.name}' was incorrect!",
+                    fg="red",
+                )
+                sys.exit(1)
+
+        return restore_zip
 
     def _configure_git(self) -> t.NoReturn:
         if not self.dry_run:

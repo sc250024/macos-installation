@@ -6,7 +6,7 @@ import typing as t
 import click
 
 from macos_installation import config
-from macos_installation.functions import compression, util
+from macos_installation.functions import compression, encryption, util
 
 
 class BackupCommand(object):
@@ -15,6 +15,7 @@ class BackupCommand(object):
         self.debug: bool = kwargs["debug"]
         self.dry_run: bool = kwargs["dry_run"]
         self.extra_location: t.Tuple[pathlib.Path] = kwargs["extra_location"]
+        self.password: t.Optional[str] = kwargs["password"]
 
         # Evaluated later
         self._all_backup_files: t.List[pathlib.Path] = None
@@ -72,8 +73,13 @@ class BackupCommand(object):
                 zip_file.writestr("info.json", info_bytes.getvalue())
 
             # Write contents to backup location
-            with open(file=self.backup_file, mode="wb") as f:
-                f.write(zip_buffer.getvalue())
+            contents = zip_buffer.getvalue()
+            backup_path = self.backup_file
+            if self.password:
+                contents = encryption.encrypt_bytes(contents, self.password)
+                backup_path = pathlib.Path(f"{backup_path.absolute()}.enc")
+
+            backup_path.write_bytes(contents)
         else:
             message = f"[DRY-RUN] {message}"
             click.secho(message, fg="yellow")

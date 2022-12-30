@@ -64,6 +64,17 @@ def cli(ctx, **kwargs) -> None:
     type=click.Path(exists=True, path_type=pathlib.Path, resolve_path=True),
     **config.BASE_CLI_OPTIONS,
 )
+@click.option(
+    "-p",
+    "--password",
+    confirmation_prompt=True,
+    help="Password to encrypt backup file",
+    hide_input=True,
+    prompt=True,
+    prompt_required=False,
+    type=str,
+    **config.BASE_CLI_OPTIONS,
+)
 @click.pass_context
 def backup(ctx, **kwargs) -> t.Any:
     """
@@ -106,6 +117,17 @@ def print_backup_locations(ctx, **kwargs) -> t.Any:
 
 
 @cli.command("restore")
+@click.option(
+    "-p",
+    "--password",
+    confirmation_prompt=True,
+    help="Password to decrypt backup file",
+    hide_input=True,
+    prompt=True,
+    prompt_required=False,
+    type=str,
+    **config.BASE_CLI_OPTIONS,
+)
 @click.option(
     "-r",
     "--restore-file",
