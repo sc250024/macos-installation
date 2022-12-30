@@ -1,4 +1,3 @@
-import datetime
 import os.path
 import pathlib
 import tempfile
@@ -30,7 +29,7 @@ class TestCliRunner(TestBase):
             # Backup #
             ##########
 
-            backup_file_name = f"test-{datetime.datetime.utcnow()}.zip"
+            backup_file_name = "test.zip"
             backup_file_path = os.path.join(isolated_area, backup_file_name)
             base_message = (
                 f"Creating backup file '{backup_file_name}' of the following locations"
@@ -59,6 +58,65 @@ class TestCliRunner(TestBase):
                     cli, ["restore", "--restore-file", backup_file_path]
                 )
                 self.assertEqual(restore_result.exit_code, 0)
+
+                for test_location in self.test_locations:
+                    message = f" to '{config.CURRENT_USER_HOME_DIR / test_location}'"
+                    self.assertIn(message, restore_result.output)
+
+    def test_encrypted_backup_restore(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem() as isolated_area:
+            password = TestBase.generate_random_string(16)
+
+            ##########
+            # Backup #
+            ##########
+
+            backup_file_name = "test.zip"
+            backup_file_path = os.path.join(isolated_area, backup_file_name)
+            base_message = (
+                f"Creating backup file '{backup_file_name}' of the following locations"
+            )
+            backup_dry_run_result = runner.invoke(
+                cli,
+                ["backup", "--backup-file", backup_file_path, "--password", password],
+            )
+            self.assertEqual(backup_dry_run_result.exit_code, 0)
+            self.assertIn(f"[DRY-RUN] {base_message}", backup_dry_run_result.output)
+
+            backup_real_result = runner.invoke(
+                cli,
+                [
+                    "--no-dry-run",
+                    "backup",
+                    "--backup-file",
+                    backup_file_path,
+                    "--password",
+                    password,
+                ],
+            )
+            self.assertEqual(backup_real_result.exit_code, 0)
+            self.assertIn(base_message, backup_real_result.output)
+
+            ###########
+            # Restore #
+            ###########
+
+            with mock.patch(
+                "macos_installation.config.CURRENT_USER_HOME_DIR",
+                pathlib.Path(tempfile.TemporaryDirectory().name),
+            ):
+                restore_result = runner.invoke(
+                    cli,
+                    [
+                        "restore",
+                        "--restore-file",
+                        f"{backup_file_path}.enc",
+                        "--password",
+                        password,
+                    ],
+                )
+                # self.assertEqual(restore_result.exit_code, 0)
 
                 for test_location in self.test_locations:
                     message = f" to '{config.CURRENT_USER_HOME_DIR / test_location}'"
