@@ -1,18 +1,11 @@
-# CLI Commands
 
-## Table of Contents
+# CLI Documentation
 
-- [CLI Commands](#cli-commands)
-  - [Table of Contents](#table-of-contents)
-  - [macos-install](#macos-install)
-    - [backup](#backup)
-    - [print-backup-locations](#print-backup-locations)
-    - [restore](#restore)
-
+Quick reference for CLI commands and flags.
 
 ## macos-install
 
-```
+```console
 Usage: macos-install [OPTIONS] COMMAND [ARGS]...
 
 Options:
@@ -28,7 +21,7 @@ Commands:
 
 ### backup
 
-```
+```console
 Usage: macos-install backup [OPTIONS]
 
   Backup current macOS installation.
@@ -36,12 +29,13 @@ Usage: macos-install backup [OPTIONS]
 Options:
   -b, --backup-file PATH     Location of backup zip file  [required]
   -l, --extra-location PATH  Extra location to back up; multiple allowed
+  -p, --password TEXT        Password to encrypt backup file
   --help                     Show this message and exit.
 ```
 
 ### print-backup-locations
 
-```
+```console
 Usage: macos-install print-backup-locations [OPTIONS]
 
   Print base backup locations.
@@ -54,12 +48,13 @@ Options:
 
 ### restore
 
-```
+```console
 Usage: macos-install restore [OPTIONS]
 
   Restore a previous macOS installation backup.
 
 Options:
+  -p, --password TEXT      Password to decrypt backup file
   -r, --restore-file PATH  Location of restore ZIP file  [required]
   --help                   Show this message and exit.
 ```
