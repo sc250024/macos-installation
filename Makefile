@@ -20,3 +20,4 @@ clean:
 	@find $(ROOT_DIR) -name ".DS_Store" -type f -exec rm -r {} +
 	@find $(ROOT_DIR) -type d -name __pycache__ -exec rm -r {} +
 	@find $(ROOT_DIR) -type d -name "*.pytest_cache*" -exec rm -r {} +
+	@find $(ROOT_DIR) -type d -name "*.mypy_cache*" -exec rm -r {} +
