@@ -144,7 +144,7 @@ class InMemoryZip(object):
 
         return contents
 
-    def write_to_file(self, filename) -> t.NoReturn:
+    def write_to_file(self, filename: pathlib.Path) -> t.NoReturn:
         """
         The write_to_file function writes the contents of the file to a new file.
 
