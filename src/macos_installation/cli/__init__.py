@@ -7,7 +7,10 @@ import coloredlogs
 
 from macos_installation import config
 from macos_installation.classes.zip import InMemoryZip
+from macos_installation.cli import decorators
 from macos_installation.cli.backup import BackupCommand
+from macos_installation.cli.decrypt import DecryptCommand
+from macos_installation.cli.encrypt import EncryptCommand
 from macos_installation.cli.print_backup_locations import PrintBackupLocationsCommand
 from macos_installation.cli.restore import RestoreCommand
 
@@ -47,14 +50,7 @@ def cli_entrypoint(ctx, **kwargs) -> None:
 
 
 @cli_entrypoint.command("backup")
-@click.option(
-    "-b",
-    "--backup-file",
-    help="Location of backup zip file",
-    required=True,
-    type=click.Path(path_type=pathlib.Path, resolve_path=True),
-    **config.BASE_CLI_OPTIONS,
-)
+@decorators.common_backup_file(exists=False)
 @click.option(
     "-l",
     "--extra-location",
@@ -63,17 +59,7 @@ def cli_entrypoint(ctx, **kwargs) -> None:
     type=click.Path(exists=True, path_type=pathlib.Path, resolve_path=True),
     **config.BASE_CLI_OPTIONS,
 )
-@click.option(
-    "-p",
-    "--password",
-    confirmation_prompt=True,
-    help="Password to encrypt backup file",
-    hide_input=True,
-    prompt=True,
-    prompt_required=False,
-    type=str,
-    **config.BASE_CLI_OPTIONS,
-)
+@decorators.common_password()
 @click.pass_context
 def backup(ctx, **kwargs) -> t.Any:
     """
@@ -83,6 +69,46 @@ def backup(ctx, **kwargs) -> t.Any:
     zip_object = InMemoryZip(password=kwargs["password"])
 
     BackupCommand(zip_object, **params).main()
+
+
+# ---------------------------------------------------------------------
+# decrypt
+# ---------------------------------------------------------------------
+
+
+@cli_entrypoint.command("decrypt")
+@decorators.common_backup_file()
+@decorators.common_password(
+    confirmation_prompt=False, prompt_required=True, required=True
+)
+@click.pass_context
+def decrypt(ctx, **kwargs) -> t.Any:
+    """
+    Decrypt an encrypted backup file.
+    """
+    params = {**ctx.obj, **kwargs}
+    zip_object = InMemoryZip(kwargs["backup_file"], kwargs["password"])
+
+    DecryptCommand(zip_object, **params).main()
+
+
+# ---------------------------------------------------------------------
+# encrypt
+# ---------------------------------------------------------------------
+
+
+@cli_entrypoint.command("encrypt")
+@decorators.common_backup_file()
+@decorators.common_password(prompt_required=True, required=True)
+@click.pass_context
+def encrypt(ctx, **kwargs) -> t.Any:
+    """
+    Encrypt an unencrypted backup file.
+    """
+    params = {**ctx.obj, **kwargs}
+    zip_object = InMemoryZip(kwargs["backup_file"], kwargs["password"])
+
+    EncryptCommand(zip_object, **params).main()
 
 
 # ---------------------------------------------------------------------
@@ -118,30 +144,14 @@ def print_backup_locations(ctx, **kwargs) -> t.Any:
 
 
 @cli_entrypoint.command("restore")
-@click.option(
-    "-p",
-    "--password",
-    help="Password to decrypt backup file",
-    hide_input=True,
-    prompt=True,
-    prompt_required=False,
-    type=str,
-    **config.BASE_CLI_OPTIONS,
-)
-@click.option(
-    "-r",
-    "--restore-file",
-    help="Location of restore ZIP file",
-    required=True,
-    type=click.Path(exists=True, path_type=pathlib.Path, resolve_path=True),
-    **config.BASE_CLI_OPTIONS,
-)
+@decorators.common_backup_file()
+@decorators.common_password(confirmation_prompt=False)
 @click.pass_context
 def restore(ctx, **kwargs) -> t.Any:
     """
     Restore a previous macOS installation backup.
     """
     params = {**ctx.obj, **kwargs}
-    zip_object = InMemoryZip(kwargs["restore_file"], kwargs["password"])
+    zip_object = InMemoryZip(kwargs["backup_file"], kwargs["password"])
 
     RestoreCommand(zip_object, **params).main()
