@@ -57,7 +57,7 @@ class TestCliRunner(TestBase):
             ):
                 restore_result = runner.invoke(
                     cli_entrypoint,
-                    ["--no-dry-run", "restore", "--restore-file", backup_file_path],
+                    ["--no-dry-run", "restore", "--backup-file", backup_file_path],
                 )
                 self.assertEqual(restore_result.exit_code, 0)
 
@@ -101,6 +101,29 @@ class TestCliRunner(TestBase):
             self.assertIn(base_message, backup_real_result.output)
 
             ###########
+            # Decrypt #
+            ###########
+
+            decrypt_result = runner.invoke(
+                cli_entrypoint,
+                [
+                    "decrypt",
+                    "--backup-file",
+                    f"{backup_file_path}.enc",
+                    "--password",
+                    password,
+                ],
+            )
+            self.assertEqual(decrypt_result.exit_code, 0)
+            try:
+                message = f"Decrypted file written to '{backup_file_path}'"
+                self.assertIn(message, decrypt_result.output)
+            except AssertionError:
+                # Test may be running on macOS; try this as well
+                message = f"Decrypted file written to '/private{backup_file_path}'"
+                self.assertIn(message, decrypt_result.output)
+
+            ###########
             # Restore #
             ###########
 
@@ -111,8 +134,9 @@ class TestCliRunner(TestBase):
                 restore_result = runner.invoke(
                     cli_entrypoint,
                     [
+                        "--no-dry-run",
                         "restore",
-                        "--restore-file",
+                        "--backup-file",
                         f"{backup_file_path}.enc",
                         "--password",
                         password,
@@ -123,6 +147,29 @@ class TestCliRunner(TestBase):
                 for test_location in self.test_locations:
                     message = f" to '{config.CURRENT_USER_HOME_DIR / test_location}'"
                     self.assertIn(message, restore_result.output)
+
+            ###########
+            # Encrypt #
+            ###########
+
+            encrypt_result = runner.invoke(
+                cli_entrypoint,
+                [
+                    "encrypt",
+                    "--backup-file",
+                    backup_file_path,
+                    "--password",
+                    password,
+                ],
+            )
+            self.assertEqual(encrypt_result.exit_code, 0)
+            try:
+                message = f"Encrypted file written to '{backup_file_path}.enc'"
+                self.assertIn(message, encrypt_result.output)
+            except AssertionError:
+                # Test may be running on macOS; try this as well
+                message = f"Encrypted file written to '/private{backup_file_path}.enc'"
+                self.assertIn(message, encrypt_result.output)
 
 
 if __name__ == "__main__":
