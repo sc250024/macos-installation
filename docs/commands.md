@@ -15,6 +15,8 @@ Options:
 
 Commands:
   backup                  Backup current macOS installation.
+  decrypt                 Decrypt an encrypted backup file.
+  encrypt                 Encrypt an unencrypted backup file.
   print-backup-locations  Print base backup locations.
   restore                 Restore a previous macOS installation backup.
 ```
@@ -27,10 +29,36 @@ Usage: macos-install backup [OPTIONS]
   Backup current macOS installation.
 
 Options:
-  -b, --backup-file PATH     Location of backup zip file  [required]
+  -b, --backup-file PATH     Location of backup/restore ZIP file  [required]
   -l, --extra-location PATH  Extra location to back up; multiple allowed
-  -p, --password TEXT        Password to encrypt backup file
+  -p, --password TEXT        Password to decrypt/encrypt backup file
   --help                     Show this message and exit.
+```
+
+### decrypt
+
+```console
+Usage: macos-install decrypt [OPTIONS]
+
+  Decrypt an encrypted backup file.
+
+Options:
+  -b, --backup-file PATH  Location of backup/restore ZIP file  [required]
+  -p, --password TEXT     Password to decrypt/encrypt backup file  [required]
+  --help                  Show this message and exit.
+```
+
+### encrypt
+
+```console
+Usage: macos-install encrypt [OPTIONS]
+
+  Encrypt an unencrypted backup file.
+
+Options:
+  -b, --backup-file PATH  Location of backup/restore ZIP file  [required]
+  -p, --password TEXT     Password to decrypt/encrypt backup file  [required]
+  --help                  Show this message and exit.
 ```
 
 ### print-backup-locations
@@ -54,7 +82,7 @@ Usage: macos-install restore [OPTIONS]
   Restore a previous macOS installation backup.
 
 Options:
-  -p, --password TEXT      Password to decrypt backup file
-  -r, --restore-file PATH  Location of restore ZIP file  [required]
-  --help                   Show this message and exit.
+  -b, --backup-file PATH  Location of backup/restore ZIP file  [required]
+  -p, --password TEXT     Password to decrypt/encrypt backup file
+  --help                  Show this message and exit.
 ```
