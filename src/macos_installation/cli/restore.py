@@ -1,4 +1,3 @@
-import io
 import json
 import os
 import pathlib
@@ -11,15 +10,16 @@ import zipfile
 import click
 
 from macos_installation import config
-from macos_installation.functions import encryption, template, util
+from macos_installation.classes.zip import InMemoryZip
+from macos_installation.functions import template, util
 
 
 class RestoreCommand(object):
-    def __init__(self, **kwargs):
+    def __init__(self, zip_object: InMemoryZip, **kwargs):
         self.debug: bool = kwargs["debug"]
         self.dry_run: bool = kwargs["dry_run"]
-        self.password: t.Optional[str] = kwargs["password"]
-        self.restore_file: pathlib.Path = kwargs["restore_file"]
+
+        self.__zip_object = zip_object
 
         # Evaluated later
         self._info_dict: t.Dict[str, t.Any] = None
@@ -36,25 +36,19 @@ class RestoreCommand(object):
     @property
     def info_dict(self) -> t.Dict[str, t.Any]:
         if self._info_dict is None:
-            with self.__get_zip_contents() as restore_zip:
-                # First perform a CRC test before continuing
-                if crc_test := restore_zip.testzip() is not None:
-                    click.secho(
-                        f"Bad CRC or file headers on '{self.restore_file}': {crc_test}",
-                        fg="red",
-                    )
-                    sys.exit(1)
+            restore_zip = zipfile.ZipFile(
+                self.__zip_object.read_unencrypted(),
+                mode="r",
+                compression=zipfile.ZIP_DEFLATED,
+            )
 
-                # Continue with extraction
-                restore_zip.extractall(
-                    members=(m for m in restore_zip.namelist() if m != "info.json"),
-                    path=self.temp_dir.name,
-                )
+            # Extract contents
+            restore_zip.extractall(path=self.temp_dir.name)
 
-                # Get the info dict
-                self._info_dict = json.loads(
-                    restore_zip.read("info.json").decode(config.DEFAULT_ENCODING)
-                )
+            # Get the info dict
+            self._info_dict = json.loads(
+                restore_zip.read("info.json").decode(config.DEFAULT_ENCODING)
+            )
 
         return self._info_dict
 
@@ -72,38 +66,6 @@ class RestoreCommand(object):
             self._temp_dir = tempfile.TemporaryDirectory()
 
         return self._temp_dir
-
-    def __get_zip_contents(self) -> zipfile.ZipFile:
-        try:
-            restore_zip = zipfile.ZipFile(
-                file=self.restore_file, mode="r", compression=zipfile.ZIP_DEFLATED
-            )
-        except zipfile.BadZipfile:
-            # File is encrypted; first check for password
-            if not self.password:
-                click.secho(
-                    "A password must be specified for an encrypted ZIP file!", fg="red"
-                )
-                sys.exit(1)
-
-            # Decrypt the bytes
-            encrypted_bytes = self.restore_file.read_bytes()
-            decrypted_data = encryption.decrypt_bytes(encrypted_bytes, self.password)
-
-            try:
-                restore_zip = zipfile.ZipFile(
-                    file=io.BytesIO(decrypted_data),
-                    mode="r",
-                    compression=zipfile.ZIP_DEFLATED,
-                )
-            except zipfile.BadZipFile:
-                click.secho(
-                    f"Password for encrypted ZIP file '{self.restore_file.name}' was incorrect!",
-                    fg="red",
-                )
-                sys.exit(1)
-
-        return restore_zip
 
     def _configure_git(self) -> t.NoReturn:
         if not self.dry_run:

@@ -25,7 +25,7 @@ def open_zip_file(
         zip_file.close()
 
 
-def create_zip_buffer(locations: t.List[pathlib.Path]) -> t.IO[bytes]:
+def create_zip_buffer(locations: t.Iterable[pathlib.Path]) -> t.IO[bytes]:
     """
     The create_zip_buffer function creates a ZIP file in memory and returns it as a bytes object.
 
