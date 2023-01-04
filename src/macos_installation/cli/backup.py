@@ -6,16 +6,18 @@ import typing as t
 import click
 
 from macos_installation import config
-from macos_installation.functions import compression, encryption, util
+from macos_installation.classes.zip import InMemoryZip
+from macos_installation.functions import util
 
 
 class BackupCommand(object):
-    def __init__(self, **kwargs):
+    def __init__(self, zip_object: InMemoryZip, **kwargs):
         self.backup_file: pathlib.Path = kwargs["backup_file"]
         self.debug: bool = kwargs["debug"]
         self.dry_run: bool = kwargs["dry_run"]
         self.extra_location: t.Tuple[pathlib.Path] = kwargs["extra_location"]
-        self.password: t.Optional[str] = kwargs["password"]
+
+        self.__zip_object = zip_object
 
         # Evaluated later
         self._all_backup_files: t.List[pathlib.Path] = None
@@ -49,7 +51,9 @@ class BackupCommand(object):
             "OLD_USER_HOME_DIR": config.CURRENT_USER_HOME_DIR,
         }
         return io.BytesIO(
-            json.dumps(info_dict, default=str, indent=2, sort_keys=True).encode("utf-8")
+            json.dumps(info_dict, default=str, indent=2, sort_keys=True).encode(
+                config.DEFAULT_ENCODING
+            )
         )
 
     def main(self) -> t.NoReturn:
@@ -63,23 +67,24 @@ class BackupCommand(object):
         if not self.dry_run:
             click.secho(message, fg="green")
 
-            # Create the base buffer
-            zip_buffer = compression.create_zip_buffer(self.all_backup_files)
+            with self.__zip_object.open_zip_file(mode="a") as zip_file:
+                # Write all files
+                for backup_file in self.all_backup_files:
+                    zip_file.write(backup_file)
 
-            # Add extra information like the current home folder
-            # So that it can be stripped from paths later on
-            with compression.open_zip_file(zip_buffer, mode="a") as zip_file:
+                # Add extra information like the current home folder
+                # So that it can be stripped from paths later on
                 info_bytes = self._get_info_bytes()
                 zip_file.writestr("info.json", info_bytes.getvalue())
 
-            # Write contents to backup location
-            contents = zip_buffer.getvalue()
+            # Use this temporary variable in case it needs to be updated
             backup_path = self.backup_file
-            if self.password:
-                contents = encryption.encrypt_bytes(contents, self.password)
+
+            if self.__zip_object.has_password:
+                self.__zip_object.encrypt()
                 backup_path = pathlib.Path(f"{backup_path.absolute()}.enc")
 
-            backup_path.write_bytes(contents)
+            self.__zip_object.write_to_file(backup_path)
         else:
             message = f"[DRY-RUN] {message}"
             click.secho(message, fg="yellow")

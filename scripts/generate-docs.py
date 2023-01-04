@@ -5,7 +5,7 @@ import typing as t
 
 import click
 
-from macos_installation.cli_commands import cli
+from macos_installation.cli import cli_entrypoint
 
 
 def recursive_help(
@@ -30,7 +30,7 @@ def recursive_help(
         print(f"{section} {cmd.name}\n")
 
     print("```console")
-    print(cmd.get_help(ctx).replace("Usage: cli", "Usage: macos-install"))
+    print(cmd.get_help(ctx).replace("Usage: cli-entrypoint", "Usage: macos-install"))
     print("```")
 
     commands = getattr(cmd, "commands", {})
@@ -41,4 +41,4 @@ def recursive_help(
 
 
 if __name__ == "__main__":
-    recursive_help(cli)
+    recursive_help(cli_entrypoint)

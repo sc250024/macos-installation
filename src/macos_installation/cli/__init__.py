@@ -6,11 +6,10 @@ import click
 import coloredlogs
 
 from macos_installation import config
-from macos_installation.cli_commands.backup import BackupCommand
-from macos_installation.cli_commands.print_backup_locations import (
-    PrintBackupLocationsCommand,
-)
-from macos_installation.cli_commands.restore import RestoreCommand
+from macos_installation.classes.zip import InMemoryZip
+from macos_installation.cli.backup import BackupCommand
+from macos_installation.cli.print_backup_locations import PrintBackupLocationsCommand
+from macos_installation.cli.restore import RestoreCommand
 
 # ---------------------------------------------------------------------
 # Main CLI group
@@ -31,15 +30,15 @@ from macos_installation.cli_commands.restore import RestoreCommand
     **config.BASE_CLI_OPTIONS,
 )
 @click.pass_context
-def cli(ctx, **kwargs) -> None:
+def cli_entrypoint(ctx, **kwargs) -> None:
     ctx.ensure_object(dict)
     ctx.obj["debug"] = kwargs["debug"]
     ctx.obj["dry_run"] = kwargs["dry_run"]
 
-    logging.basicConfig(
-        level=(logging.DEBUG if kwargs.get("debug", None) is not None else logging.INFO)
-    )
-    coloredlogs.install(level=logging.DEBUG)
+    level = logging.DEBUG if kwargs.get("debug", False) else logging.INFO
+
+    logging.basicConfig(level=level)
+    coloredlogs.install(level=level)
 
 
 # ---------------------------------------------------------------------
@@ -47,7 +46,7 @@ def cli(ctx, **kwargs) -> None:
 # ---------------------------------------------------------------------
 
 
-@cli.command("backup")
+@cli_entrypoint.command("backup")
 @click.option(
     "-b",
     "--backup-file",
@@ -81,7 +80,9 @@ def backup(ctx, **kwargs) -> t.Any:
     Backup current macOS installation.
     """
     params = {**ctx.obj, **kwargs}
-    BackupCommand(**params).main()
+    zip_object = InMemoryZip(password=kwargs["password"])
+
+    BackupCommand(zip_object, **params).main()
 
 
 # ---------------------------------------------------------------------
@@ -89,7 +90,7 @@ def backup(ctx, **kwargs) -> t.Any:
 # ---------------------------------------------------------------------
 
 
-@cli.command("print-backup-locations")
+@cli_entrypoint.command("print-backup-locations")
 @click.option(
     "-t",
     "--tablefmt",
@@ -116,11 +117,10 @@ def print_backup_locations(ctx, **kwargs) -> t.Any:
 # ---------------------------------------------------------------------
 
 
-@cli.command("restore")
+@cli_entrypoint.command("restore")
 @click.option(
     "-p",
     "--password",
-    confirmation_prompt=True,
     help="Password to decrypt backup file",
     hide_input=True,
     prompt=True,
@@ -142,4 +142,6 @@ def restore(ctx, **kwargs) -> t.Any:
     Restore a previous macOS installation backup.
     """
     params = {**ctx.obj, **kwargs}
-    RestoreCommand(**params).main()
+    zip_object = InMemoryZip(kwargs["restore_file"], kwargs["password"])
+
+    RestoreCommand(zip_object, **params).main()

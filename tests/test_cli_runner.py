@@ -7,14 +7,14 @@ from unittest import mock
 from click.testing import CliRunner
 
 from macos_installation import config
-from macos_installation.cli_commands import cli
+from macos_installation.cli import cli_entrypoint
 from tests import TestBase
 
 
 class TestCliRunner(TestBase):
     def test_print_backup_locations(self):
         runner = CliRunner()
-        result = runner.invoke(cli, ["print-backup-locations"])
+        result = runner.invoke(cli_entrypoint, ["print-backup-locations"])
         self.assertEqual(result.exit_code, 0)
 
         for test_location in self.test_locations:
@@ -35,13 +35,14 @@ class TestCliRunner(TestBase):
                 f"Creating backup file '{backup_file_name}' of the following locations"
             )
             backup_dry_run_result = runner.invoke(
-                cli, ["backup", "--backup-file", backup_file_path]
+                cli_entrypoint, ["backup", "--backup-file", backup_file_path]
             )
             self.assertEqual(backup_dry_run_result.exit_code, 0)
             self.assertIn(f"[DRY-RUN] {base_message}", backup_dry_run_result.output)
 
             backup_real_result = runner.invoke(
-                cli, ["--no-dry-run", "backup", "--backup-file", backup_file_path]
+                cli_entrypoint,
+                ["--no-dry-run", "backup", "--backup-file", backup_file_path],
             )
             self.assertEqual(backup_real_result.exit_code, 0)
             self.assertIn(base_message, backup_real_result.output)
@@ -55,7 +56,8 @@ class TestCliRunner(TestBase):
                 pathlib.Path(tempfile.TemporaryDirectory().name),
             ):
                 restore_result = runner.invoke(
-                    cli, ["restore", "--restore-file", backup_file_path]
+                    cli_entrypoint,
+                    ["--no-dry-run", "restore", "--restore-file", backup_file_path],
                 )
                 self.assertEqual(restore_result.exit_code, 0)
 
@@ -78,14 +80,14 @@ class TestCliRunner(TestBase):
                 f"Creating backup file '{backup_file_name}' of the following locations"
             )
             backup_dry_run_result = runner.invoke(
-                cli,
+                cli_entrypoint,
                 ["backup", "--backup-file", backup_file_path, "--password", password],
             )
             self.assertEqual(backup_dry_run_result.exit_code, 0)
             self.assertIn(f"[DRY-RUN] {base_message}", backup_dry_run_result.output)
 
             backup_real_result = runner.invoke(
-                cli,
+                cli_entrypoint,
                 [
                     "--no-dry-run",
                     "backup",
@@ -107,7 +109,7 @@ class TestCliRunner(TestBase):
                 pathlib.Path(tempfile.TemporaryDirectory().name),
             ):
                 restore_result = runner.invoke(
-                    cli,
+                    cli_entrypoint,
                     [
                         "restore",
                         "--restore-file",
@@ -116,7 +118,7 @@ class TestCliRunner(TestBase):
                         password,
                     ],
                 )
-                # self.assertEqual(restore_result.exit_code, 0)
+                self.assertEqual(restore_result.exit_code, 0)
 
                 for test_location in self.test_locations:
                     message = f" to '{config.CURRENT_USER_HOME_DIR / test_location}'"
