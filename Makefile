@@ -21,3 +21,12 @@ clean:
 	@find $(ROOT_DIR) -type d -name __pycache__ -exec rm -r {} +
 	@find $(ROOT_DIR) -type d -name "*.pytest_cache*" -exec rm -r {} +
 	@find $(ROOT_DIR) -type d -name "*.mypy_cache*" -exec rm -r {} +
+
+# ==================================================================================== #
+# TASK
+# ==================================================================================== #
+
+## task/update-cli-docs: updates the cli docs for new options / flags
+.PHONY: task/update-cli-docs
+task/update-cli-docs:
+	@$(ROOT_DIR)/scripts/generate-docs.py > $(ROOT_DIR)/docs/commands.md
