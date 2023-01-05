@@ -27,7 +27,7 @@ def recursive_help(
             )
         )
     else:
-        print(f"{section} {cmd.name}\n")
+        print(f"\n{section} {cmd.name}\n")
 
     print("```console")
     print(cmd.get_help(ctx).replace("Usage: cli-entrypoint", "Usage: macos-install"))
