@@ -1,11 +1,11 @@
-import hashlib
-import os
-import struct
+import secrets
 import typing as t
 
 from Cryptodome.Cipher import AES
+from Cryptodome.Protocol import KDF
 
 from macos_installation import config
+from macos_installation.classes.data import EncryptedData
 
 
 def encrypt_bytes(
@@ -13,81 +13,88 @@ def encrypt_bytes(
     password: t.Union[bytes, str],
 ) -> bytes:
     """
-    The encrypt_bytes function encrypts the given bytes using AES-256 in CBC mode.
+    The encrypt_bytes function encrypts the given unencrypted_data using AES-GCM
+    with the given password. The function returns a byte string containing the salt,
+    nonce, encrypted data, and digest tag concatenated together in that order.
 
-    :param unencrypted_data:bytes: Pass the unencrypted data to be encrypted
-    :param password:t.Union[bytes, str]: Specify the password
-    :return: A byte string containing the encrypted data, along with the salt and initialization vector
+    :param unencrypted_data:bytes: Store the data that will be encrypted
+    :param password:t.Union[bytes, str]: Specify the password; string or bytes object allowed
+    :param : Generate a key from the password
+    :return: The encrypted data along with the salt, nonce, and digest tag
     """
-    # Derive the key and iv from the password and salt
-    key_iv, salt = generate_hashed_password(password)
-    key = key_iv[:32]
-    iv = key_iv[-16:]
+    try:
+        password = password.encode(config.DEFAULT_ENCODING)
+    except AttributeError:
+        # Password is already encoded
+        pass
 
-    # Pad the data to a multiple of 16 bytes
-    pad = 16 - (len(unencrypted_data) % 16)
-    unencrypted_data += pad * struct.pack("b", pad)
+    key, salt = generate_key(password)
 
     # Encrypt the data
-    cipher = AES.new(key, AES.MODE_CBC, iv)
+    cipher = AES.new(key, AES.MODE_GCM)
+    nonce = cipher.nonce
     encrypted_data = cipher.encrypt(unencrypted_data)
+    tag = cipher.digest()
 
-    # Return the encrypted data along with the salt and initialization vector
-    return salt + iv + encrypted_data
+    # Return the encrypted data along with the salt, nonce, and digest tag
+    return salt + nonce + encrypted_data + tag
 
 
 def decrypt_bytes(encrypted_data: bytes, password: t.Union[bytes, str]) -> bytes:
     """
     The decrypt_bytes function takes in a bytes object and a password, and returns the decrypted data.
+    The function uses AES-GCM to decrypt the data,
+    which is an authenticated encryption algorithm that provides both confidentiality and integrity.
+    The function also checks if the encrypted data has been tampered with by comparing its tag with what it should be.
 
     :param encrypted_data:bytes: Store the encrypted data
-    :param password:t.Union[bytes, str]: Specify the password
+    :param password:t.Union[bytes, str]: Specify the password; string or bytes object allowed
     :return: The decrypted data
     """
-    # Extract the salt, iv, and encrypted data from the input
-    salt = encrypted_data[:8]
-    iv = encrypted_data[8:24]
-    data = encrypted_data[24:]
+    # Extract the salt from the encrypted data, and generate the decryption key
+    encrypted_data = EncryptedData(encrypted_data)
 
-    # Derive the key and iv from the password and salt
-    key_iv, salt = generate_hashed_password(password, salt=salt)
-    key = key_iv[:32]
+    key, _ = generate_key(password, encrypted_data.salt)
+
+    # Create cipher with the nonce
+    cipher = AES.new(key, AES.MODE_GCM, nonce=encrypted_data.nonce)
 
     # Decrypt the data
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    decrypted_data = cipher.decrypt(data)
+    decrypted_data = cipher.decrypt(encrypted_data.raw_data)
 
-    # Strip off the padding
-    pad = decrypted_data[-1]
-    decrypted_data = decrypted_data[:-pad]
+    # Verify the data
+    cipher.verify(encrypted_data.tag)
 
     # Return the decrypted data
     return decrypted_data
 
 
-def generate_hashed_password(
+def generate_salt(size: int = 32) -> bytes:
+    """
+    The generate_salt function generates a random salt of the specified size.
+    The default size is 32 bytes, or 256 bits.
+
+    :param size:int=32: Specify the size of the salt to be generated
+    :return: A random sequence of bytes
+    """
+    return secrets.token_bytes(size)
+
+
+def generate_key(
     password: str,
-    hash_name: str = "sha256",
-    rounds: int = 100_000,
     salt: t.Optional[bytes] = None,
-    salt_size: t.Optional[int] = 8,
+    key_length: t.Optional[int] = 32,
 ) -> t.Tuple[bytes, bytes]:
     """
-    The generate_hashed_password function hashes a password using the PBKDF2 algorithm.
+    The generate_key function generates a key and salt for use in the encrypt
+    and decrypt functions. The password is hashed using scrypt, which is then used
+    to generate the key and salt. The function returns both of these values as a tuple.
 
-    :param password:str: Store the password that will be hashed
-    :param hash_name:str='sha256': Specify the hash algorithm to use
-    :param rounds:int=100_000: Determine how many times the password is hashed
-    :param salt:t.Optional[bytes]=None: Set a default value for the salt parameter
-    :param salt_size:t.Optional[int]=8: Specify the size of the salt
-    :param : Specify the hashing algorithm
-    :return: A tuple of a hashed password and the salt used to generate it
+    :param password:str: Provide the password that will be used to generate the key
+    :param salt:t.Optional[bytes]=None: Generate a new salt if one is not provided
+    :param key_length:t.Optional[int]=32: Specify the length of the key to be generated
+    :return: A tuple of the key and salt
     """
-    try:
-        password = password.encode(config.DEFAULT_ENCODING)
-    except AttributeError:
-        pass
-
-    salt = os.urandom(salt_size) if not salt else salt
-
-    return hashlib.pbkdf2_hmac(hash_name, password, salt, rounds), salt
+    if not salt:
+        salt = generate_salt(key_length)
+    return KDF.scrypt(password, salt, key_len=key_length, N=2**20, r=8, p=1), salt
