@@ -123,6 +123,20 @@ class TestCliRunner(TestBase):
                 message = f"Decrypted file written to '/private{backup_file_path}'"
                 self.assertIn(message, decrypt_result.output)
 
+            bad_password = password[:-2]
+            decrypt_result = runner.invoke(
+                cli_entrypoint,
+                [
+                    "decrypt",
+                    "--backup-file",
+                    f"{backup_file_path}.enc",
+                    "--password",
+                    bad_password,
+                ],
+            )
+            self.assertEqual(decrypt_result.exit_code, 1)
+            self.assertIn("was incorrect", decrypt_result.output)
+
             ###########
             # Restore #
             ###########

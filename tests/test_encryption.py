@@ -1,6 +1,6 @@
 import unittest
 
-from Cryptodome.Random import get_random_bytes
+from Cryptodome import Random
 
 from macos_installation.functions import encryption
 
@@ -8,10 +8,10 @@ from macos_installation.functions import encryption
 class TestEncryptDecrypt(unittest.TestCase):
     def test_encrypt_decrypt(self):
         # Generate a random password
-        password = get_random_bytes(16).hex()
+        password = Random.get_random_bytes(16).hex()
 
         # Generate a random file
-        data = get_random_bytes(1024)
+        data = Random.get_random_bytes(1024)
 
         # Encrypt the file and write it
         encrypted_data = encryption.encrypt_bytes(data, password)
@@ -25,43 +25,58 @@ class TestEncryptDecrypt(unittest.TestCase):
         # Check that the decrypted data is the same as the original data
         self.assertEqual(data, decrypted_data)
 
+    def test_encrypt_decrypt_tampering(self):
+        # Generate a random password
+        password = Random.get_random_bytes(16).hex()
 
-class TestHashPassword(unittest.TestCase):
-    def test_default_arguments(self):
-        hashed_password, salt = encryption.generate_hashed_password("password")
-        self.assertIsInstance(hashed_password, bytes)
-        self.assertIsInstance(salt, bytes)
-        self.assertEqual(len(salt), 8)
+        # Generate a random file
+        data = Random.get_random_bytes(1024)
 
-    def test_custom_hash_name(self):
-        hashed_password, salt = encryption.generate_hashed_password(
-            "password", hash_name="sha3-512"
-        )
-        self.assertIsInstance(hashed_password, bytes)
-        self.assertIsInstance(salt, bytes)
-        self.assertEqual(len(salt), 8)
+        # Encrypt the file and write it
+        encrypted_data = encryption.encrypt_bytes(data, password)
 
-    def test_custom_rounds(self):
-        hashed_password, salt = encryption.generate_hashed_password(
-            "password", rounds=500000
-        )
-        self.assertIsInstance(hashed_password, bytes)
-        self.assertIsInstance(salt, bytes)
-        self.assertEqual(len(salt), 8)
+        # Tamper with the data to later raise the exception
+        encrypted_data = encrypted_data[:-1]
 
-    def test_custom_salt(self):
+        # Decrypt the bytes, but fail gracefully
+        with self.assertRaises(ValueError, msg="MAC check failed") as context:
+            encryption.decrypt_bytes(encrypted_data, password)
+
+
+class TestGenerateKey(unittest.TestCase):
+    def test_generate_key(self):
         salt = b"salt"
-        hashed_password, salt_output = encryption.generate_hashed_password(
-            "password", salt=salt
-        )
-        self.assertIsInstance(hashed_password, bytes)
-        self.assertIsInstance(salt_output, bytes)
-        self.assertEqual(salt, salt_output)
+        password = "password"
 
-    def test_custom_salt_size(self):
-        hashed_password, salt = encryption.generate_hashed_password(
-            "password", salt_size=4
+        # Test with default arguments
+        key1, _ = encryption.generate_key(password=password, salt=salt)
+        self.assertEqual(len(key1), 32)
+        self.assertIsInstance(key1, bytes)
+        self.assertEqual(
+            key1,
+            b"G\xfe\x7f\x81\xaeJO\t\xbcX\x8b=\x16\xab\xaa'\x1ch \x00\xa27\xc3\xc6I;\xfd\x1a\xf0\xeb$\xef",
         )
-        self.assertIsInstance(hashed_password, bytes)
-        self.assertIsInstance(salt, bytes)
-        self.assertEqual(len(salt), 4)
+
+        # Test with different key length
+        key2, _ = encryption.generate_key(password=password, salt=salt, key_length=64)
+        self.assertEqual(len(key2), 64)
+        self.assertIsInstance(key2, bytes)
+        self.assertEqual(
+            key2,
+            b"G\xfe\x7f\x81\xaeJO\t\xbcX\x8b=\x16\xab\xaa'\x1ch \x00\xa27\xc3\xc6I;\xfd\x1a\xf0\xeb$\xef"
+            b"N:\x18\xc4q\xffy\x90\xb2`\xb9\xc0\x17Ib\xb6pj\xbe\x90\x05\xb7&\xa1\r+&\xc3\xf2\xdc7X",
+        )
+
+
+class TestGenerateSalt(unittest.TestCase):
+    def test_generate_salt(self):
+        # Test salt generation with various sizes
+        for size in [1, 16, 32, 64]:
+            salt = encryption.generate_salt(size)
+            self.assertEqual(len(salt), size)
+            self.assertIsInstance(salt, bytes)
+
+        # Test that different sizes produce different salts
+        self.assertNotEqual(encryption.generate_salt(16), encryption.generate_salt(16))
+        self.assertNotEqual(encryption.generate_salt(32), encryption.generate_salt(32))
+        self.assertNotEqual(encryption.generate_salt(64), encryption.generate_salt(64))
