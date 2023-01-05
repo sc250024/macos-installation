@@ -76,12 +76,12 @@ class InMemoryZip(object):
                             fg="red",
                         )
                         sys.exit(1)
-                except zipfile.BadZipfile as e:
+                except ValueError:
                     click.secho(
                         f"Password for encrypted ZIP file '{self.file_path.name}' was incorrect!",
                         fg="red",
                     )
-                    raise e
+                    sys.exit(1)
             else:
                 click.secho(
                     "A password must be specified for an encrypted ZIP file!", fg="red"
