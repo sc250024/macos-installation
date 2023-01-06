@@ -40,11 +40,12 @@ class RestoreCommand(object):
             restore_zip.extractall(path=self.temp_dir.name)
 
             # Get the info dict
-            temp_json = json.loads(
+            temp_json: t.Dict[str, str] = json.loads(
                 restore_zip.read("manifest.json").decode(config.DEFAULT_ENCODING)
             )
+            self._backup_manifest = BackupManifest(existing=True, **temp_json)
 
-        return BackupManifest(existing=True, **temp_json)
+        return self._backup_manifest
 
     @property
     def temp_dir(self) -> tempfile.TemporaryDirectory:
