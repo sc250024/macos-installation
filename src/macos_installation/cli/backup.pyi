@@ -9,7 +9,10 @@ class BackupCommand:
     debug: bool
     dry_run: bool
     extra_location: t.List[pathlib.Path]
-    def __init__(self, zip_object: InMemoryZip, **kwargs) -> None: ...
+    def __init__(self, zip_object: InMemoryZip, **kwargs) -> None:
+        self._backup_locations = None
+        self._backup_manifest = None
+        ...
     @property
     def backup_locations(self) -> t.List[pathlib.Path]: ...
     @property
