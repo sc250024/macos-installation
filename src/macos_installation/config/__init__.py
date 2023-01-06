@@ -30,17 +30,21 @@ BASE_CLI_OPTIONS: t.Final[t.Dict[str, t.Any]] = {
 
 # Files / directories to back up
 BACKUP_LOCATIONS: t.List[pathlib.Path] = [
-    CURRENT_USER_HOME_DIR / ".git-template",
-    CURRENT_USER_HOME_DIR / ".gitconfig",
-    CURRENT_USER_HOME_DIR / ".gitignore_global",
-    CURRENT_USER_HOME_DIR / ".gnupg",
-    CURRENT_USER_HOME_DIR / ".jump",
-    CURRENT_USER_HOME_DIR / ".ssh",
-    CURRENT_USER_HOME_DIR / ".vim",
-    CURRENT_USER_HOME_DIR / ".vimrc",
-    CURRENT_USER_HOME_DIR / ".zprofile",
-    CURRENT_USER_HOME_DIR / ".zsh_history",
-    CURRENT_USER_HOME_DIR / ".zshrc",
-    CURRENT_USER_HOME_DIR / "iterm2-colors",
-    CURRENT_USER_HOME_DIR / "iterm2-prefs",
+    p
+    for p in [
+        CURRENT_USER_HOME_DIR / ".git-template",
+        CURRENT_USER_HOME_DIR / ".gitconfig",
+        CURRENT_USER_HOME_DIR / ".gitignore_global",
+        CURRENT_USER_HOME_DIR / ".gnupg",
+        CURRENT_USER_HOME_DIR / ".jump",
+        CURRENT_USER_HOME_DIR / ".ssh",
+        CURRENT_USER_HOME_DIR / ".vim",
+        CURRENT_USER_HOME_DIR / ".vimrc",
+        CURRENT_USER_HOME_DIR / ".zprofile",
+        CURRENT_USER_HOME_DIR / ".zsh_history",
+        CURRENT_USER_HOME_DIR / ".zshrc",
+        CURRENT_USER_HOME_DIR / "iterm2-colors",
+        CURRENT_USER_HOME_DIR / "iterm2-prefs",
+    ]
+    if p.exists()
 ]
