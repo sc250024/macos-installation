@@ -1,6 +1,7 @@
 import logging
 import pathlib
 import typing as t
+from pprint import pformat
 
 import click
 import coloredlogs
@@ -13,6 +14,8 @@ from macos_installation.cli.decrypt import DecryptCommand
 from macos_installation.cli.encrypt import EncryptCommand
 from macos_installation.cli.print_backup_locations import PrintBackupLocationsCommand
 from macos_installation.cli.restore import RestoreCommand
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------
 # Main CLI group
@@ -43,6 +46,9 @@ def cli_entrypoint(ctx, **kwargs) -> None:
     logging.basicConfig(level=level)
     coloredlogs.install(level=level)
 
+    logger.debug(f"Debug mode is: {'Enabled' if ctx.obj['debug'] else 'Disabled'}")
+    logger.debug(f"Dry-run mode is: {'Enabled' if ctx.obj['dry_run'] else 'Disabled'}")
+
 
 # ---------------------------------------------------------------------
 # backup
@@ -66,6 +72,7 @@ def backup(ctx, **kwargs) -> t.Any:
     Backup current macOS installation.
     """
     params = {**ctx.obj, **kwargs}
+    logger.debug(f"Options passed to command 'backup': {pformat(params)}")
     zip_object = InMemoryZip(password=kwargs["password"])
 
     BackupCommand(zip_object, **params).main()
@@ -87,6 +94,7 @@ def decrypt(ctx, **kwargs) -> t.Any:
     Decrypt an encrypted backup file.
     """
     params = {**ctx.obj, **kwargs}
+    logger.debug(f"Options passed to command 'decrypt': {pformat(params)}")
     zip_object = InMemoryZip(kwargs["backup_file"], kwargs["password"])
 
     DecryptCommand(zip_object, **params).main()
@@ -106,6 +114,7 @@ def encrypt(ctx, **kwargs) -> t.Any:
     Encrypt an unencrypted backup file.
     """
     params = {**ctx.obj, **kwargs}
+    logger.debug(f"Options passed to command 'encrypt': {pformat(params)}")
     zip_object = InMemoryZip(kwargs["backup_file"], kwargs["password"])
 
     EncryptCommand(zip_object, **params).main()
@@ -131,6 +140,9 @@ def print_backup_locations(ctx, **kwargs) -> t.Any:
     Print base backup locations.
     """
     params = {**ctx.obj, **kwargs}
+    logger.debug(
+        f"Options passed to command 'print-backup-locations': {pformat(params)}"
+    )
     click.secho(
         f"==> Printing backup files / folders for user '{config.CURRENT_USER}'",
         fg="green",
@@ -152,6 +164,7 @@ def restore(ctx, **kwargs) -> t.Any:
     Restore a previous macOS installation backup.
     """
     params = {**ctx.obj, **kwargs}
+    logger.debug(f"Options passed to command 'restore': {pformat(params)}")
     zip_object = InMemoryZip(kwargs["backup_file"], kwargs["password"])
 
     RestoreCommand(zip_object, **params).main()

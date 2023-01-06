@@ -1,12 +1,16 @@
 import json
+import logging
 import pathlib
 import typing as t
+from pprint import pformat
 
 import click
 
 from macos_installation import config
 from macos_installation.classes.data import BackupManifest
 from macos_installation.classes.zip import InMemoryZip
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class BackupCommand(object):
@@ -22,6 +26,8 @@ class BackupCommand(object):
         # Evaluated later
         self._backup_locations: t.Optional[t.List[pathlib.Path]] = None
         self._backup_manifest: t.Optional[BackupManifest] = None
+
+        logger.debug(f"Class 'BackupCommand' instantiated: {pformat(self.__dict__)}")
 
     @property
     def backup_locations(self) -> t.List[pathlib.Path]:
