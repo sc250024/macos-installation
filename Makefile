@@ -30,3 +30,8 @@ clean:
 .PHONY: task/update-cli-docs
 task/update-cli-docs:
 	@$(ROOT_DIR)/scripts/generate-docs.py > $(ROOT_DIR)/docs/commands.md
+
+## task/check-mypy: runs mypy to check types
+.PHONY: task/check-mypy
+task/check-mypy:
+	mypy --install-types --non-interactive --check-untyped-defs $(ROOT_DIR)src/
