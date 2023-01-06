@@ -18,11 +18,13 @@ class InMemoryZip(object):
     def __init__(
         self, file: t.Optional[pathlib.Path] = None, password: t.Optional[str] = None
     ):
+        # Inputs
         self.file_path = file
-        self.zip_contents = io.BytesIO(
+        self.__password = password
+
+        self.zip_contents: t.Optional[t.IO[bytes]] = io.BytesIO(
             self.file_path.read_bytes() if self.file_path else None
         )
-        self.__password = password
 
         logger.debug(f"Class 'InMemoryZip' instantiated: {pformat(self.__dict__)}")
 

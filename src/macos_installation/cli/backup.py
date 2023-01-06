@@ -1,4 +1,3 @@
-import io
 import json
 import pathlib
 import typing as t
@@ -6,8 +5,8 @@ import typing as t
 import click
 
 from macos_installation import config
+from macos_installation.classes.data import BackupManifest
 from macos_installation.classes.zip import InMemoryZip
-from macos_installation.functions import util
 
 
 class BackupCommand(object):
@@ -15,46 +14,28 @@ class BackupCommand(object):
         self.backup_file: pathlib.Path = kwargs["backup_file"]
         self.debug: bool = kwargs["debug"]
         self.dry_run: bool = kwargs["dry_run"]
-        self.extra_location: t.Tuple[pathlib.Path] = kwargs["extra_location"]
+        self.extra_location: t.List[pathlib.Path] = list(kwargs["extra_location"])
 
+        # Injected dependencies
         self.__zip_object = zip_object
 
         # Evaluated later
-        self._all_backup_files: t.List[pathlib.Path] = None
-        self._backup_locations: t.List[pathlib.Path] = None
-
-    @property
-    def all_backup_files(self) -> t.List[pathlib.Path]:
-        if self._all_backup_files is None:
-            self._all_backup_files = [
-                location
-                for location in util.get_recursive_file_list(self.backup_locations)
-            ]
-        return self._all_backup_files
+        self._backup_locations: t.Optional[t.List[pathlib.Path]] = None
+        self._backup_manifest: t.Optional[BackupManifest] = None
 
     @property
     def backup_locations(self) -> t.List[pathlib.Path]:
         if self._backup_locations is None:
-            self._backup_locations = list(
-                set(config.BACKUP_LOCATIONS + list(self.extra_location))
+            self._backup_locations = sorted(
+                list(set(config.BACKUP_LOCATIONS + self.extra_location))
             )
         return self._backup_locations
 
-    def _get_info_bytes(self) -> t.IO[bytes]:
-        # Create the info dictionary and write it to the root of the archive
-        info_dict = {
-            "BACKUP_LOCATIONS": sorted(str(p) for p in self.backup_locations),
-            "FILE_DIGESTS": {
-                str(f): util.get_file_sha256_hash(f) for f in self.all_backup_files
-            },
-            "OLD_USER": config.CURRENT_USER,
-            "OLD_USER_HOME_DIR": config.CURRENT_USER_HOME_DIR,
-        }
-        return io.BytesIO(
-            json.dumps(info_dict, default=str, indent=2, sort_keys=True).encode(
-                config.DEFAULT_ENCODING
-            )
-        )
+    @property
+    def backup_manifest(self) -> BackupManifest:
+        if self._backup_manifest is None:
+            self._backup_manifest = BackupManifest(self.backup_locations)
+        return self._backup_manifest
 
     def main(self) -> t.NoReturn:
         """
@@ -69,13 +50,20 @@ class BackupCommand(object):
 
             with self.__zip_object.open_zip_file(mode="a") as zip_file:
                 # Write all files
-                for backup_file in self.all_backup_files:
+                for backup_file in self.backup_manifest.all_backup_files:
                     zip_file.write(backup_file)
 
-                # Add extra information like the current home folder
-                # So that it can be stripped from paths later on
-                info_bytes = self._get_info_bytes()
-                zip_file.writestr("info.json", info_bytes.getvalue())
+                # Add backup manifest of all files, and user information
+                # for later usage
+                zip_file.writestr(
+                    "manifest.json",
+                    json.dumps(
+                        self.backup_manifest.dict(),
+                        default=str,
+                        indent=2,
+                        sort_keys=True,
+                    ),
+                )
 
             # Use this temporary variable in case it needs to be updated
             backup_path = self.backup_file

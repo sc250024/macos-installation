@@ -10,6 +10,7 @@ import zipfile
 import click
 
 from macos_installation import config
+from macos_installation.classes.data import BackupManifest
 from macos_installation.classes.zip import InMemoryZip
 from macos_installation.functions import template, util
 
@@ -19,23 +20,16 @@ class RestoreCommand(object):
         self.debug: bool = kwargs["debug"]
         self.dry_run: bool = kwargs["dry_run"]
 
+        # Injected dependencies
         self.__zip_object = zip_object
 
         # Evaluated later
-        self._info_dict: t.Dict[str, t.Any] = None
-        self._temp_dir: tempfile.TemporaryDirectory = None
+        self._backup_manifest: t.Optional[BackupManifest] = None
+        self._temp_dir: t.Optional[tempfile.TemporaryDirectory] = None
 
     @property
-    def backup_locations(self) -> t.Dict[str, str]:
-        return self.info_dict["BACKUP_LOCATIONS"]
-
-    @property
-    def file_digests(self) -> t.Dict[str, str]:
-        return self.info_dict["FILE_DIGESTS"]
-
-    @property
-    def info_dict(self) -> t.Dict[str, t.Any]:
-        if self._info_dict is None:
+    def backup_manifest(self) -> BackupManifest:
+        if self._backup_manifest is None:
             restore_zip = zipfile.ZipFile(
                 self.__zip_object.read_unencrypted(),
                 mode="r",
@@ -46,19 +40,11 @@ class RestoreCommand(object):
             restore_zip.extractall(path=self.temp_dir.name)
 
             # Get the info dict
-            self._info_dict = json.loads(
-                restore_zip.read("info.json").decode(config.DEFAULT_ENCODING)
+            temp_json = json.loads(
+                restore_zip.read("manifest.json").decode(config.DEFAULT_ENCODING)
             )
 
-        return self._info_dict
-
-    @property
-    def old_user(self) -> str:
-        return self.info_dict["OLD_USER"]
-
-    @property
-    def old_user_home_dir(self) -> str:
-        return self.info_dict["OLD_USER_HOME_DIR"]
+        return BackupManifest(existing=True, **temp_json)
 
     @property
     def temp_dir(self) -> tempfile.TemporaryDirectory:
@@ -125,18 +111,19 @@ class RestoreCommand(object):
                 os.chmod(key, 0o600)
 
     def _validate_extracted_files(self) -> t.NoReturn:
-        for sp, digest_hash in self.file_digests.items():
+        for sp, digest_hash in self.backup_manifest.file_digests.items():
             extracted_hash = util.get_file_sha256_hash(
                 file_path=pathlib.Path(self.temp_dir.name + sp)
             )
             assert extracted_hash == digest_hash
 
     def _restore_files(self) -> t.NoReturn:
-        for backup_location in self.backup_locations:
+        for backup_location in self.backup_manifest.backup_locations:
             temp_location = pathlib.Path(self.temp_dir.name + backup_location)
             restore_location = pathlib.Path(
                 backup_location.replace(
-                    self.old_user_home_dir, str(config.CURRENT_USER_HOME_DIR)
+                    self.backup_manifest.old_user_home_dir,
+                    str(config.CURRENT_USER_HOME_DIR),
                 )
             )
 
