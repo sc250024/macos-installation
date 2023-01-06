@@ -1,8 +1,12 @@
+import logging
 import typing as t
+from pprint import pformat
 
 import tabulate
 
 from macos_installation import config
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class PrintBackupLocationsCommand(object):
@@ -10,6 +14,10 @@ class PrintBackupLocationsCommand(object):
         self.debug: bool = kwargs["debug"]
         self.dry_run: bool = kwargs["dry_run"]
         self.tablefmt: str = kwargs["tablefmt"]
+
+        logger.debug(
+            f"Class 'PrintBackupLocationsCommand' instantiated: {pformat(self.__dict__)}"
+        )
 
     def main(self) -> t.NoReturn:
         """

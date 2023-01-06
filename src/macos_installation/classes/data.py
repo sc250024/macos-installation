@@ -1,9 +1,13 @@
 import dataclasses
+import logging
 import pathlib
 import typing as t
+from pprint import pformat
 
 from macos_installation import config
 from macos_installation.functions import util
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -29,6 +33,17 @@ class EncryptedData:
         ]
         self.tag: bytes = self.encrypted_data[-(self.tag_size) :]
 
+        logger.debug(f"Class 'EncryptedData' instantiated: {pformat(self)}")
+
+    def __repr__(self):
+        return (
+            f"EncryptedData(encrypted_data_size={len(self.encrypted_data)}"
+            f", salt_size={self.salt_size}"
+            f", nonce_size={self.nonce_size}"
+            f", tag_size={self.tag_size}"
+            ")"
+        )
+
 
 @dataclasses.dataclass
 class BackupManifest:
@@ -50,6 +65,15 @@ class BackupManifest:
             self.file_digests = {
                 str(f): util.get_file_sha256_hash(f) for f in self.all_backup_files
             }
+
+        logger.debug(f"Class 'BackupManifest' instantiated: {pformat(self)}")
+
+    def __repr__(self):
+        return (
+            f"BackupManifest(backup_locations={self.backup_locations}, "
+            f"old_user={self.old_user}, "
+            f"old_user_home_dir={self.old_user_home_dir})"
+        )
 
     def dict(self):
         return {

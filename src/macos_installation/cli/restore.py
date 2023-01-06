@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pathlib
 import shutil
@@ -6,6 +7,7 @@ import sys
 import tempfile
 import typing as t
 import zipfile
+from pprint import pformat
 
 import click
 
@@ -13,6 +15,8 @@ from macos_installation import config
 from macos_installation.classes.data import BackupManifest
 from macos_installation.classes.zip import InMemoryZip
 from macos_installation.functions import template, util
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class RestoreCommand(object):
@@ -26,6 +30,8 @@ class RestoreCommand(object):
         # Evaluated later
         self._backup_manifest: t.Optional[BackupManifest] = None
         self._temp_dir: t.Optional[tempfile.TemporaryDirectory] = None
+
+        logger.debug(f"Class 'RestoreCommand' instantiated: {pformat(self.__dict__)}")
 
     @property
     def backup_manifest(self) -> BackupManifest:

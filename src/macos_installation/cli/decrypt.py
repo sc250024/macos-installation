@@ -1,9 +1,13 @@
+import logging
 import pathlib
 import typing as t
+from pprint import pformat
 
 import click
 
 from macos_installation.classes.zip import InMemoryZip
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class DecryptCommand(object):
@@ -12,6 +16,8 @@ class DecryptCommand(object):
         self.dry_run: bool = kwargs["dry_run"]
 
         self.__zip_object = zip_object
+
+        logger.debug(f"Class 'DecryptCommand' instantiated: {pformat(self.__dict__)}")
 
     def main(self) -> t.NoReturn:
         self.__zip_object.decrypt()

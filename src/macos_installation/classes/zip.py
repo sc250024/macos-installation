@@ -26,7 +26,10 @@ class InMemoryZip(object):
             self.file_path.read_bytes() if self.file_path else None
         )
 
-        logger.debug(f"Class 'InMemoryZip' instantiated: {pformat(self.__dict__)}")
+        logger.debug(
+            "Class 'InMemoryZip' instantiated: "
+            f"{pformat({k: v for k, v in self.__dict__.items() if '__password' not in k})}"
+        )
 
     @property
     def is_encrypted(self) -> bool:
