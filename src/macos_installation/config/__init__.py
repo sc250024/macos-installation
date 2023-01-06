@@ -16,7 +16,7 @@ PACKAGE_DIR: t.Final[pathlib.Path] = (
 TEMPLATES_DIR: t.Final[pathlib.Path] = PACKAGE_DIR / "templates"
 
 # CLI options
-BASE_CLI_CONTEXT_SETTINGS = {
+BASE_CLI_CONTEXT_SETTINGS: t.Final[t.Dict[str, t.Any]] = {
     "auto_envvar_prefix": "MACOS_INSTALL",
     "help_option_names": ["-h", "--help"],
     "ignore_unknown_options": True,

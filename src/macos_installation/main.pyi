@@ -1,0 +1,3 @@
+import typing as t
+
+def main() -> t.NoReturn: ...
