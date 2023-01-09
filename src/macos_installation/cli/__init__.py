@@ -22,7 +22,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------
 
 
-@click.group()
+@click.group("macos-install")
 @click.option(
     "--debug/--no-debug",
     default=False,
