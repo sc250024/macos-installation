@@ -30,7 +30,7 @@ def recursive_help(
         print(f"\n{section} {cmd.name}\n")
 
     print("```console")
-    print(cmd.get_help(ctx).replace("Usage: cli-entrypoint", "Usage: macos-install"))
+    print(cmd.get_help(ctx))
     print("```")
 
     commands = getattr(cmd, "commands", {})
