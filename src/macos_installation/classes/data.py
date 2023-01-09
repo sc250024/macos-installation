@@ -33,11 +33,12 @@ class EncryptedData:
         ]
         self.tag: bytes = self.encrypted_data[-(self.tag_size) :]
 
-        logger.debug(f"Class 'EncryptedData' instantiated: {pformat(self)}")
+        logger.debug(f"Dataclass 'EncryptedData' instantiated: {pformat(self)}")
 
     def __repr__(self):
         return (
-            f"EncryptedData(encrypted_data_size={len(self.encrypted_data)}"
+            "EncryptedData("
+            f"encrypted_data_size={len(self.encrypted_data)}"
             f", salt_size={self.salt_size}"
             f", nonce_size={self.nonce_size}"
             f", tag_size={self.tag_size}"
@@ -66,7 +67,7 @@ class BackupManifest:
                 str(f): util.get_file_sha256_hash(f) for f in self.all_backup_files
             }
 
-        logger.debug(f"Class 'BackupManifest' instantiated: {pformat(self)}")
+        logger.debug(f"Dataclass 'BackupManifest' instantiated: {pformat(self)}")
 
     def __repr__(self):
         return (
